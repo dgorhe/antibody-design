@@ -1,2 +1,14 @@
-# antibody-design
-Modeling antibody design based on antibody and antigen information. Will also look at other existing methods for modeling antibodies. 
+# Antibody Design
+Modeling antibody design based on antibody and antigen information. I will also look at existing methods for modeling antibodies. I first want to try and model this problem naively from first principles but I also realize there are others who have spent much mmore time and thought on this problem.
+
+# Motivation
+Biologics are becoming increasingly relevant for developing therapeutics. Look no further than the recent mRNA COVID-19 vaccines as a testament to this development. A big step forward in developing precise therapeutics however is developing antibodies. These are proteins which help our immune system develop pattern recognition for pathogens. Alternatively, there could be antibodies which trick our immune system into thinking our healthy cells are pathogens. In both cases, understanding how to design antibodies based on the properties of previously successful antibodies as well as the current antigen of interest (i.e. the thing that antibody sticks to) is paramount. We could develop patient-specific antibodies to attach to cancer cells which would allow our immune system to selectively attack cancerous cells in a way that isn't possible with mainstream therapeutics like chemotherapy.
+
+# Issues
+Ok so how does this actually work? Why can't we just simulate all of this from all the possible variation of antibodies? There can't be that many right? Well actually, there are a lot. Specifically there are at least ~3.5e6 possible antibodies and likely somewhere in the ~3e9 possibilities. Even if a single simluation took 1 minute and we had some binary criteria (i.e. above 90% affinity means it works), we would need almost 6 years to simluate every possible antibody for a single antigen (that's using the 3.5e6 estimate). The next idea is to "interpolate" between existing antibodies or antigens and see if that works. However, there's not a whole lot of inductive reasoning behind antibody efficacy. There's some information in the fitting between antibody and antigen that needs to be projected into a high-dimensional latent space. More simply, an antibody working in the past doesn't mean a similar antibody will work for any antigen. 
+
+# Naive Approach
+We know the mechanism for how these possibilities are generated, namely it's called V(D)J recombination. In short immune cells in their nacscency recombine premade protein "pieces" to create antibodies. This is in constrast to treating each amino acid in an antibody as independent. Presumably this mechansim evolved to ensure some basic structural integrity of any antibody irrespective of its potential antigen affinity. 
+
+# Informed Approach (Papers etc.)
+I'm currently reading papers so I'll update this later. One particular approach I'm keen to explore is graph neural networks. If we can draw undirected edges from antibody nodes to antigen nodes with the edge weight corresponding to affinity, we might be able to "learn" from existing antibody-antigen pairs without throwing out information about one or the other. This is just conjecture on my part so I will update this as I update my priors. 
