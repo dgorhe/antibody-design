@@ -1,4 +1,6 @@
 */.ipynb_checkpoints
 */.DS_Store
 
-!models/vae/*.py
+models/vae/*.png
+models/vae/__pycache__/**
+models/vae/dataset/**
