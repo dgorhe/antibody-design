@@ -4,4 +4,4 @@
 !Exploratory.ipynb
 !README.md
 !sources.txt
-!models/vae/*.py
+!*/models/vae/*.py
