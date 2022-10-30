@@ -1,6 +1,7 @@
-*/.ipynb_checkpoints
-*/.DS_Store
-
-models/vae/*.png
-models/vae/__pycache__/**
-models/vae/dataset/**
+*
+!.gitignore
+!dependencies.txt
+!Exploratory.ipynb
+!README.md
+!sources.txt
+!models/vae/*.py
