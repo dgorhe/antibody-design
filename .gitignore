@@ -1,0 +1,4 @@
+*/.DS_Store
+models/*/*.png
+models/dataset/*
+*/__pycache__
