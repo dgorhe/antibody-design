@@ -1,4 +1,4 @@
+*/.ipynb_checkpoints
 */.DS_Store
-models/*/*.png
-models/*/dataset/*
-*/__pycache__
+
+!models/vae/*.py
