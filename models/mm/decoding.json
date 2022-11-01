@@ -1,0 +1,72 @@
+{
+    "symbol": {
+        "one-character": {
+            "0": "A",
+            "1": "C",
+            "2": "D",
+            "3": "E",
+            "4": "F",
+            "5": "G",
+            "6": "H",
+            "7": "I",
+            "8": "K",
+            "9": "L",
+            "10": "M",
+            "11": "N",
+            "12": "P",
+            "13": "Q",
+            "14": "R",
+            "15": "S",
+            "16": "T",
+            "17": "V",
+            "18": "W",
+            "19": "Y"
+        },
+        
+        "three-character": {
+            "0": "Ala",
+            "1": "Cys",
+            "2": "Asp",
+            "3": "Glu",
+            "4": "Phe",
+            "5": "Gly",
+            "6": "His",
+            "7": "Ile",
+            "8": "Lys",
+            "9": "Leu",
+            "10": "Met",
+            "11": "Asn",
+            "12": "Pro",
+            "13": "Gln",
+            "14": "Arg",
+            "15": "Ser",
+            "16": "Thr",
+            "17": "Val",
+            "18": "Trp",
+            "19": "Tyr"
+        }
+    },
+
+    "full-name": {
+        "0": "Alanine",
+        "1": "Cysteine",
+        "2": "Aspartic Acid",
+        "3": "Glutamic Acid",
+        "4": "Phenylalanine",
+        "5": "Glycine",
+        "6": "Histidine",
+        "7": "Isoleucine",
+        "8": "Lysine",
+        "9": "Leucine",
+        "10": "Methionine",
+        "11": "Asparagine",
+        "12": "Proline",
+        "13": "Glutamine",
+        "14": "Arginine",
+        "15": "Serine",
+        "16": "Threonine",
+        "17": "Valine",
+        "18": "Tryptophan",
+        "19": "Tyrosine"
+    }
+}
