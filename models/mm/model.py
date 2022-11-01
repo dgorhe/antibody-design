@@ -1,3 +1,5 @@
+import os
+import sys
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
@@ -24,19 +26,27 @@ class MarkovModel():
     
     # Load primary sequence data
     def load_data(self, filename):
-        # parse file extension
-        # based on file extension, parse into dataframe
-        # Manipulate data as needed to create single column with whole sequence
-        # Generator object from unified single column
-        # Return generator object
-        return filename
+        try:
+            if filename.endswith("csv"):
+                df = pd.read_csv(filename)
+            if filename.endswith("tsv"):
+                df = pd.read_csv(filename, sep='\t')
+            else:
+                print("Please use one of the following file extensions:")
+                print("csv, tsv")
+        except FileNotFoundError:
+            print(f"Looks like the file: {filename} doesn't exist :(")
+            print("Re-run the program with the correct filepath")
+            sys.exit(0)
+
+        return df['v_domain'].items()
 
     # Find p_ij and p_ji for each amino acid i --> amino acid j transition
     def find_pairwise_frequencies(self, strings: list[str]):
         symbols = set()
         pairs = defaultdict(lambda: 0)
 
-        for s in strings:
+        for _, s in strings:
             for i in range(1, len(s)):
                 # sliding window of size 2
                 pair = (s[i-1], s[i])
@@ -54,14 +64,14 @@ class MarkovModel():
 
     def save_transition_matrix(self, extension='parquet'):
         if extension == 'parquet':
-            self.transition_matrix.to_parquet(f'transition-matrix.{ext}')
+            self.transition_matrix.to_parquet(f'transition-matrix.{extension}')
         if extension == 'csv':
-            self.transition_matrix.to_csv(f'transition-matrix.{ext}', sep=',')
+            self.transition_matrix.to_csv(f'transition-matrix.{extension}', sep=',')
         if extension == 'tsv':
-            self.transition_matrix.to_tsv(f'transition-matrix.{ext}', sep='\t')
+            self.transition_matrix.to_tsv(f'transition-matrix.{extension}', sep='\t')
 
 
 if __name__ == "__main__":
-    fname = ["AABCBCB", "BCBCBCB", "AABCCCB"]
-    mm = MarkovModel(fname)
+    tcr_path = os.path.abspath("../../data/tcr.csv")
+    mm = MarkovModel(tcr_path)
     print(mm.transition_matrix)
