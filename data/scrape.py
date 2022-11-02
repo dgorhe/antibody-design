@@ -44,9 +44,12 @@ def get_value(input_string, key):
     
     return out.pop()
 
+def scrape_page(path):
+    pass
+
 def download_pages(urls, prefix='tcr', dir=pages):
     for url in tqdm(urls):
-        filename = os.path.join(dir, f"{url.split('/')[-1]}.txt")
+        filename = os.path.join(dir, f"{prefix}-{url.split('/')[-1]}.txt")
         wget.download(url, filename)
 
 
@@ -55,4 +58,6 @@ if __name__ == "__main__":
     url_root = "https://www.iedb.org/receptor/"
     epitope_ids = [47, 54, 97, 109]
     urls = [url_root + str(id) for id in epitope_ids]
+
+    download_pages(urls, prefix='tcr', dir=pages)
 
