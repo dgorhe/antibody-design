@@ -4,6 +4,7 @@
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
 # website: http://jupyter.org/
+data/pages/*
 data/tcell_receptor_table_export_1667353882.csv
 scratch.ipynb
 .ipynb_checkpoints
