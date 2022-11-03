@@ -29,6 +29,9 @@ def find_kl_divergence(x, y):
 
     return cumulative_kl
 
+def find_n_gram_distribution(examples):
+    pass
+
 if __name__ == "__main__":
     x = np.random.normal(2, 1, 20); x = x[x > 0]
     y = np.random.normal(2, 1, 20); y = y[y > 0]
