@@ -6,6 +6,7 @@ import git
 import pathlib
 import os
 from tqdm import tqdm
+import pandas as pd
 
 git_repo = git.Repo(".", search_parent_directories=True)
 git_root = git_repo.git.rev_parse("--show-toplevel")
@@ -48,16 +49,37 @@ def scrape_page(path):
     pass
 
 def download_pages(urls, prefix='tcr', dir=pages):
-    for url in tqdm(urls):
+    for url in tqdm(urls, total=len(urls)):
         filename = os.path.join(dir, f"{prefix}-{url.split('/')[-1]}.txt")
         wget.download(url, filename)
 
+def get_receptor_ids(df):
+    try:
+        assert 'Receptor ID' in df.columns
+    except AssertionError:
+        print("Looks like the 'Receptor ID' column is not in your data")
+        print("Please check the column names below")
+        print(df.columns)
+
+    return set(df['Receptor ID'].tolist())
+
 
 if __name__ == "__main__":
+    # Testing get_value()
     # print(get_value(test, keys["alpha"]["cdr1"]))
-    url_root = "https://www.iedb.org/receptor/"
-    epitope_ids = [47, 54, 97, 109]
-    urls = [url_root + str(id) for id in epitope_ids]
+    
+    # # Testing download_pages
+    # url_root = "https://www.iedb.org/receptor/"
+    # epitope_ids = [47, 54, 97, 109]
+    # urls = [url_root + str(id) for id in epitope_ids]
+    # download_pages(urls, prefix='tcr', dir=pages)
 
+    # Testing get_receptor_ids
+    url_root = "https://www.iedb.org/receptor/"
+    df = pd.read_csv("tcell_receptor_table_export_1667353882.csv", dtype='object')
+    receptor_ids = get_receptor_ids(df)
+    receptor_ids_subset = receptor_ids[0:50]
+    urls = [url_root + str(id) for id in receptor_ids_subset]
     download_pages(urls, prefix='tcr', dir=pages)
+
 
