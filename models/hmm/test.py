@@ -1,6 +1,9 @@
+import os
 import unittest
 from model import HiddenMarkovModel
 import pickle
+from pprint import pprint
+import pdb
 import numpy as np
 import pandas as pd
 
@@ -8,6 +11,8 @@ import pandas as pd
 # https://iulg.sitehost.iu.edu/moss/hmmcalculations.pdf
 obs_symbols = ['a', 'b']
 state_symbols = ['s', 't']
+
+pi = np.array([0.85, 0.15])
 
 # Defined in section "2 Our first HMM h_1"
 transition_matrix = np.array([
@@ -51,15 +56,28 @@ bab_total_prob_forward = bab_forward_s[-1] + bab_forward_t[-1]
 # bab_backward_t = 
 # bab_total_prob_backward =
 
+def forward(starting_distribution, transition_matrix, emission_matrix, observations):
+    forward_prob = []
+    # pdb.set_trace()
+    base_case = starting_distribution * emission_matrix.loc[:, observations[0]]
+    forward_prob.append(base_case)
+
+    for i in range(1, len(observations)):
+        alpha_i = forward_prob[i - 1] * transition_matrix * emission_matrix.loc[:, observations[i]]
+        forward_prob.append(alpha_i)
+    
+    return forward_prob
 
 class TestHMM(unittest.TestCase):
-    # hmm = HiddenMarkovModel()
-    def test_abba_forward(self, hmm):
-        # calculate probability of string abba
-        total_prob = 0
-        return self.assertEqual(total_prob, abba_total_prob_forward)
-    
-    def test_bab_forward(self, hmm):
-        # calculate probability of string bab
-        total_prob = 0
-        return self.assertEqual(total_prob, bab_total_prob_forward)
+    def baum_welch_forward(self):
+        hmm = HiddenMarkovModel(encoding_path=None, transition=transition_df, emission=emission_df)
+        
+        expected = np.array([
+            [0.34     , 0.075     ],
+            [0.0657     ,0.15275   ],
+            [0.020991   ,0.0917325 ],
+            [0.00618822 ,0.04862648]
+        ])
+        observed = hmm.baum_welch_forward('abba', pi)
+        norm_diff = np.linalg.norm(observed - expected, 2)
+        return self.assertLessEqual(norm_diff, 1e-6)
