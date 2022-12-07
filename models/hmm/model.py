@@ -1,16 +1,17 @@
 import json
 import numpy as np
 import pandas as pd
-from collections import Iterable
 
 class HiddenMarkovModel():
-    def __init__(self, encoding_path, transition=None, emission=None) -> None:
-        self.states = ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
-        self.observation_symbols = self.get_observation_symbols(encoding_path)
+    def __init__(self, encoding_path=None, states=None, transition=None, emission=None) -> None:
+        self.states = states if states is not None else ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
+        if encoding_path is not None:
+            self.observation_symbols = self.get_observation_symbols(encoding_path)
+
         self.transition = transition if transition is not None else self.initialize_transition(self.states)
         self.emission = emission if emission is not None else self.initialize_emission(self.observations, self.states)
 
-    def get_observation_symbols(self, path: str) -> tuple(str):
+    def get_observation_symbols(self, path):
         """
         Load the amino acid symbols needed to parse antibody sequence
 
@@ -28,7 +29,7 @@ class HiddenMarkovModel():
         assert len(observations) == 20
         return observations
 
-    def initialize_transition(self, states: Iterable[str]) -> pd.DataFrame:
+    def initialize_transition(self, states) -> pd.DataFrame:
         """Create the transition matrix for the HMM model
 
         Args:
@@ -41,57 +42,20 @@ class HiddenMarkovModel():
         df = pd.DataFrame(init_array, index=states, columns=states)
         return df
 
-    def state_given_observation(self, obs: str) -> str:
-        """
-        Weighted random guess about the state from the emission matrix given emission probabilities
+    def baum_welch_forward(self, observations, starting):
+        starting_distribution = starting
+        transition_matrix = self.transition
+        emission_matrix = self.emission
+        
+        forward_prob = []
+        base_case = starting_distribution * emission_matrix.loc[:, observations[0]]
+        forward_prob.append(base_case)
 
-        Args:
-            obs (str): Observation symbol (i.e. one of the amino acids)
-
-        Returns:
-            str: State symbol (None, CDR1, CDR2, CDR3)
-        """
-        return np.random.choice(
-            self.emission.columns,
-            size=None,
-            replace=True,
-            p=self.emission.loc[obs],
-        )
+        for i in range(1, len(observations)):
+            alpha_i = forward_prob[i - 1] @ transition_matrix * emission_matrix.loc[:, observations[i]]
+            forward_prob.append(alpha_i)
+        
+        return np.array(forward_prob)
     
-    def observation_given_state(self, state: str) -> str:
-        """
-        Weighted random guess about the observation from the emission matrix given emission probabilities
-
-        Args:
-            state (str): State symbol (None, CDR1, CDR2, CDR3)
-
-        Returns:
-            str: Observation symbol (i.e. one of the amino acids)
-        """
-        return np.random.choice(
-            list(self.emission.index),
-            size=None,
-            replace=True,
-            p=self.emission[state],
-        )
-
-    def state_given_state(self, state: str) -> str:
-        """
-        Weighted random guess for state of sequence given state at time t-1
-
-        Args:
-            state (str): State symbol (None, CDR1, CDR2, CDR3)
-
-        Returns:
-            str: State symbol (None, CDR1, CDR2, CDR3)
-        """
-        return np.random.choice(
-            list(self.transition.index),
-            size=None,
-            replace=True,
-            p=self.transition[state],
-        )
-
-if __name__ == "__main__":
-    encoding = "../../data/encoding.json"
-    hmm = HiddenMarkovModel(encoding)
+    def baum_welch_backward():
+        pass
