@@ -1,15 +1,15 @@
+import pdb
 import json
 import numpy as np
 import pandas as pd
 
 class HiddenMarkovModel():
-    def __init__(self, encoding_path=None, states=None, transition=None, emission=None) -> None:
-        self.states = states if states is not None else ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
-        if encoding_path is not None:
-            self.observation_symbols = self.get_observation_symbols(encoding_path)
+    def __init__(self, obs_symbols=None, states=None, transition=None, emission=None) -> None:
+        self.obs_symbols = obs_symbols
 
         self.transition = transition if transition is not None else self.initialize_transition(self.states)
         self.emission = emission if emission is not None else self.initialize_emission(self.observations, self.states)
+        self.states = states if states is not None else ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
 
     def get_observation_symbols(self, path):
         """
@@ -47,15 +47,24 @@ class HiddenMarkovModel():
         transition_matrix = self.transition
         emission_matrix = self.emission
         
-        forward_prob = []
-        base_case = starting_distribution * emission_matrix.loc[:, observations[0]]
-        forward_prob.append(base_case)
+        forward_prob = [0 for _ in range(len(observations))]
+        forward_prob[0] = starting_distribution * emission_matrix.loc[:, observations[0]]
 
         for i in range(1, len(observations)):
             alpha_i = forward_prob[i - 1] @ transition_matrix * emission_matrix.loc[:, observations[i]]
-            forward_prob.append(alpha_i)
+            forward_prob[i] = alpha_i.to_numpy()
         
-        return np.array(forward_prob)
+        return np.vstack(forward_prob)
     
-    def baum_welch_backward():
-        pass
+    def baum_welch_backward(self, observations):
+        transition_matrix = self.transition
+        emission_matrix = self.emission
+        
+        backward_prob = [0 for _ in range(len(observations))]
+        backward_prob[-1] = np.ones(len(self.states))
+
+        for i in range(len(observations) - 2, -1, -1):
+            beta_i = transition_matrix @ (emission_matrix.loc[:, observations[i + 1]] * backward_prob[i + 1])
+            backward_prob[i] = beta_i.to_numpy()
+
+        return np.vstack(backward_prob)
