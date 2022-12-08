@@ -37,40 +37,9 @@ emission_df = pd.DataFrame(
     index=state_symbols
 )
 
-# Forward probabilities, aka alpha function
-abba_forward_s = [0.34, 0.06600, 0.02118, 0.00625]
-abba_forward_t = [0.08, 0.15500, 0.09285, 0.04919]
-abba_total_prob_forward = abba_forward_s[-1] + abba_forward_t[-1]
-
-bab_forward_s = [0.51, 0.0644, 0.0209]
-bab_forward_t = [0.08, 0.2145, 0.1190]
-bab_total_prob_forward = bab_forward_s[-1] + bab_forward_t[-1]
-
-
-# Backward probabilities, aka beta function
-# abba_backward_s = 
-# abba_backward_t = 
-# abba_total_prob_backward = 
-
-# bab_backward_s = 
-# bab_backward_t = 
-# bab_total_prob_backward =
-
-def forward(starting_distribution, transition_matrix, emission_matrix, observations):
-    forward_prob = []
-    # pdb.set_trace()
-    base_case = starting_distribution * emission_matrix.loc[:, observations[0]]
-    forward_prob.append(base_case)
-
-    for i in range(1, len(observations)):
-        alpha_i = forward_prob[i - 1] * transition_matrix * emission_matrix.loc[:, observations[i]]
-        forward_prob.append(alpha_i)
-    
-    return forward_prob
-
 class TestHMM(unittest.TestCase):
-    def baum_welch_forward(self):
-        hmm = HiddenMarkovModel(encoding_path=None, transition=transition_df, emission=emission_df)
+    def test_baum_welch_forward(self):
+        hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
         
         expected = np.array([
             [0.34     , 0.075     ],
@@ -81,3 +50,19 @@ class TestHMM(unittest.TestCase):
         observed = hmm.baum_welch_forward('abba', pi)
         norm_diff = np.linalg.norm(observed - expected, 2)
         return self.assertLessEqual(norm_diff, 1e-6)
+    
+    def test_baum_welch_backward(self):
+        hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
+        
+        expected = np.array(
+            [[0.133143, 0.127281],
+            [0.2561  , 0.2487  ],
+            [0.47    , 0.49    ],
+            [1.      , 1.      ]
+        ])
+        observed = hmm.baum_welch_backward('abba')
+        norm_diff = np.linalg.norm(observed - expected, 2)
+        return self.assertLessEqual(norm_diff, 1e-6)
+
+if __name__ == "__main__":
+    unittest.test()
