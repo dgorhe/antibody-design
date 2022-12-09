@@ -33,7 +33,7 @@ class HiddenMarkovModel():
         """Create the transition matrix for the HMM model
 
         Args:
-            states (Iterable[str]): Sequence of possible states (4 in our case: None, CDR1, CDR2, CDR3)
+            states: Sequence of possible states
 
         Returns:
             pd.DataFrame: Transition matrix where row and column labels are states
@@ -68,3 +68,72 @@ class HiddenMarkovModel():
             backward_prob[i] = beta_i.to_numpy()
 
         return np.vstack(backward_prob)
+
+    def baum_welch_update(self, forward_prob, backward_prob, observations):
+        # Getting total probability of the observation sequence for each state
+        total_prob = np.sum(forward_prob[-1])
+        delta = []
+
+        for idx, obs in enumerate(observations):
+            # We can only calculate until the (n-1)st observation
+            if idx + 1 == len(observations):
+                break
+            
+            # Output of forward algorithm
+            alpha_curr = forward_prob[idx]
+            
+            # Output of backward algorithm
+            beta_next = backward_prob[idx + 1]
+            
+            # Calculate all combinations of state transitions to current observation
+            gamma_i = (alpha_curr * self.transition.T).T
+            gamma_i *= self.emission.loc[:, obs] * beta_next
+            gamma_i /= total_prob
+            
+            # Total probability of transitioning from state i to state j
+            delta_i = np.sum(gamma_i, axis=1)
+            delta.append(delta_i)
+        
+        # Final state probability is determined exclusively by the forward algorithm output
+        delta.append(forward_prob[-1] / total_prob)
+        
+        # Turn list of 1D arrays into a single array of size (observations x states)
+        return np.vstack(delta)
+
+if __name__ == "__main__":
+    obs_symbols = ['a', 'b']
+    state_symbols = ['s', 't']
+
+    pi = np.array([0.85, 0.15])
+
+    # Defined in section "2 Our first HMM h_1"
+    transition_matrix = np.array([
+        [0.3, 0.7],
+        [0.1, 0.9]
+    ])
+
+    emission_matrix = np.array([
+        [0.4, 0.6],
+        [0.5, 0.5]
+    ])
+
+    transition_df = pd.DataFrame(
+        transition_matrix, 
+        columns=state_symbols, 
+        index=state_symbols
+    )
+
+    emission_df = pd.DataFrame(
+        emission_matrix, 
+        columns=obs_symbols, 
+        index=state_symbols
+    )
+    
+    hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
+    
+    forward = hmm.baum_welch_forward('abba', pi)
+    backward = hmm.baum_welch_backward('abba')
+    delta = hmm.baum_welch_update(forward, backward, 'abba')
+
+    print(delta)
+
