@@ -64,5 +64,25 @@ class TestHMM(unittest.TestCase):
         norm_diff = np.linalg.norm(observed - expected, 2)
         return self.assertLessEqual(norm_diff, 1e-6)
 
+    def test_baum_welch_update(self):
+        hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
+        
+        # Manually calculated values
+        expected = np.array([
+            [0.73053731, 0.16714359],
+            [0.30695729, 0.69304271],
+            [0.20296072, 0.853486  ],
+            [0.11289345, 0.88710655]
+        ])
+        
+        # Calculate forward, backward and update
+        forward = hmm.baum_welch_forward('abba', pi)
+        backward = hmm.baum_welch_backward('abba')
+        observed = hmm.baum_welch_update(forward, backward, 'abba')
+        
+        # Check if the norm of the difference is less than 1e-6
+        norm_diff = np.linalg.norm(observed - expected, 2)
+        return self.assertLessEqual(norm_diff, 1e-6)
+
 if __name__ == "__main__":
     unittest.test()
