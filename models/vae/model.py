@@ -1,8 +1,7 @@
-import pdb
 import torch
 from torch import nn
 
-# Author: Aladdin Persson
+# Original Author: Aladdin Persson
 # Reference: https://www.youtube.com/watch?v=VELQT1-hILo
 
 # Input img -> Hidden dim -> mean, std -> Parametrization trick -> Decoder -> Output img
@@ -35,12 +34,3 @@ class VariationalAutoEncoder(nn.Module):
         z_reparametrized = mu + (sigma * epsilon)
         x_reconstructed = self.decode(z_reparametrized)
         return x_reconstructed, mu, sigma
-
-
-if __name__ == "__main__":
-    x = torch.randn(4, 784) # 28x28 = 784
-    vae = VariationalAutoEncoder(input_dim=784)
-    x_reconstructed, mu, sigma = vae(x)
-    print(x_reconstructed.shape)
-    print(mu.shape)
-    print(sigma.shape)
