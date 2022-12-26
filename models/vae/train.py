@@ -1,3 +1,5 @@
+import pdb
+from datetime import date
 from tqdm import tqdm
 from scipy.io import mmread
 import torch
@@ -12,10 +14,11 @@ parser = ArgumentParser(
 )
 
 parser.add_argument("-d", "--data", default="../../data/encoded_antibodies.mtx", help='File path for training data. Should be mtx file of dimension (training examples, example size)')
-parser.add_argument("-hdim", default=200, help='Number of nodes in hidden dimension')
-parser.add_argument("-zdim", default=20, help='Number of for latent space mu and sigma')
-parser.add_argument("-n", default=20, help='Number of epochs to train for')
-parser.add_argument("-batchsize", default=64, help='Number of training data points per batch')
+parser.add_argument("-hdim", type=int, default=200, help='Number of nodes in hidden dimension')
+parser.add_argument("-zdim", type=int, default=20, help='Number of for latent space mu and sigma')
+parser.add_argument("-n", type=int, default=20, help='Number of epochs to train for')
+parser.add_argument("-batchsize", type=int, default=64, help='Number of training data points per batch')
+parser.add_argument("-name", type=str, default=None, help="Name of the model to save in trained/. Defaults todays date in the form YEAR-MONTH-DAY")
 args = parser.parse_args()
 
 # Matrix of dimension (training data points, data point length)
@@ -24,7 +27,7 @@ data = torch.tensor(data, dtype=torch.float32)
 
 # Settings for training
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-INPUT_DIM = data.shape[0]
+INPUT_DIM = data.shape[1]
 H_DIM = args.hdim
 Z_DIM = args.zdim
 NUM_EPOCHS = args.n
@@ -52,3 +55,6 @@ for epoch in range(NUM_EPOCHS):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        
+model_name = f"trained/{args.name}.pt" if args.name is not None else f"trained/{str(date.today())}.pt"
+torch.save(model, model_name)
