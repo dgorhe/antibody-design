@@ -1,3 +1,4 @@
+import pdb
 import torch
 from torch import nn
 
@@ -8,7 +9,7 @@ from torch import nn
 class VariationalAutoEncoder(nn.Module):
     def __init__(self, input_dim, h_dim=200, z_dim=20) -> None:
         super().__init__()
-        self.img_2hid = nn.Linear(input_dim, h_dim)
+        self.vec_2hid = nn.Linear(input_dim, h_dim)
         self.hid_2mu = nn.Linear(h_dim, z_dim)
         self.hid_2sigma = nn.Linear(h_dim, z_dim)
 
@@ -19,7 +20,7 @@ class VariationalAutoEncoder(nn.Module):
     
     def encode(self, x):
         # q_phi(z | x)
-        h = self.relu(self.img_2hid(x))
+        h = self.relu(self.vec_2hid(x))
         mu, sigma = self.hid_2mu(h), self.hid_2sigma(h)
         return mu, sigma
 
