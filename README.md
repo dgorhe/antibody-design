@@ -20,6 +20,10 @@ There are specific regions within the variable domain called complementary deter
 ## Deep AutoEncoders (`models/dae`) [Not Implemented]
 Given a sequence, can we simply train a deep neural network to reconstruct that sequence? This is the naive, deep learning way to perform sequence reconstruction.
 
+<p align="center">
+  <img src="diagrams/dae.svg" />
+</p>
+
 ## Variational AutoEncoders (`models/vae`) [Implemented]
 Although it is an autoencoder at its core, this implementation uses the reparametrization trick outlined in [this paper from 2014](https://arxiv.org/abs/1312.6114). They showed that it is sufficient to simply learn a mu and sigma associated with a latent distribution of any distribution and recapitualte an input. This has worked empirically well in practice in other fields so it's worth trying out here.
 
