@@ -1,0 +1,10 @@
+name: antibody-design
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - pandas
+  - numpy
+  - pytorch
+  - pytorch-lightning
+  - matplotlib
