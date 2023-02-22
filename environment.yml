@@ -8,3 +8,10 @@ dependencies:
   - pytorch
   - pytorch-lightning
   - matplotlib
+  - SciencePlots
+  - seaborn
+  - bokeh
+  - ipykernel
+  - ipywidgets
+  - jupyter
+  - tqdm
