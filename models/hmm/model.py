@@ -1,7 +1,9 @@
-import pdb
+from pdb import set_trace
 import json
 import numpy as np
 import pandas as pd
+from typing import Iterable, Union
+from numpy.typing import ArrayLike
 
 class HiddenMarkovModel():
     def __init__(self, obs_symbols=None, states=None, transition=None, emission=None) -> None:
@@ -42,31 +44,58 @@ class HiddenMarkovModel():
         df = pd.DataFrame(init_array, index=states, columns=states)
         return df
 
-    def baum_welch_forward(self, observations, starting):
+    def baum_welch_forward(
+        self, 
+        observations: Iterable[Union[str, int]], 
+        starting: np.ndarray) -> ArrayLike:
+        """
+        Baum-Welch Forward Algorithm
+
+        Args:
+            observations (Iterable[Union[str, int]]): List of emitted observations
+            starting (np.ndarray): Starting distribution of states (i.e. probability of starting in each state)
+
+        Returns:
+            ArrayLike: Matrix of alpha_i values of size (observations x states)
+        """
         starting_distribution = starting
         transition_matrix = self.transition
         emission_matrix = self.emission
         
+        # Set all probabilities to 0
         forward_prob = [0 for _ in range(len(observations))]
+        
+        # Probability of first observation is the starting distribution * emission probability
         forward_prob[0] = starting_distribution * emission_matrix.loc[:, observations[0]]
 
+        # For observations 1, 2, ..., n the probability of the current observation
+        # is the probability of transition from the previous state, to the
+        # current state * the probability of emitting the current observed variable
         for i in range(1, len(observations)):
             alpha_i = forward_prob[i - 1] @ transition_matrix * emission_matrix.loc[:, observations[i]]
             forward_prob[i] = alpha_i.to_numpy()
         
+        # Stack all the 1D arrays along row dimension into a matrix of size (observations x states)
         return np.vstack(forward_prob)
     
     def baum_welch_backward(self, observations):
         transition_matrix = self.transition
         emission_matrix = self.emission
         
+        # Set all probabilities to 0
         backward_prob = [0 for _ in range(len(observations))]
+        
+        # Probability of last observation is 1 by definition
         backward_prob[-1] = np.ones(len(self.states))
 
+        # For observations n-1, n-2, ..., 0 the probability of the current observation
+        # is the probability that we emitted the subsequent observation * the probability
+        # of transitioning from the current state to the subsequent state
         for i in range(len(observations) - 2, -1, -1):
             beta_i = transition_matrix @ (emission_matrix.loc[:, observations[i + 1]] * backward_prob[i + 1])
             backward_prob[i] = beta_i.to_numpy()
 
+        # Stack all the 1D arrays along row dimension into a matrix of size (observations x states)
         return np.vstack(backward_prob)
 
     def baum_welch_update(self, forward_prob, backward_prob, observations):
@@ -136,4 +165,3 @@ if __name__ == "__main__":
     delta = hmm.baum_welch_update(forward, backward, 'abba')
 
     print(delta)
-
