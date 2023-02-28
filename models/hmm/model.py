@@ -12,6 +12,7 @@ class HiddenMarkovModel():
         self.transition = transition if transition is not None else self.initialize_transition(self.states)
         self.emission = emission if emission is not None else self.initialize_emission(self.observations, self.states)
         self.states = states if states is not None else ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
+        self.starting = None
 
     def get_observation_symbols(self, path):
         """
@@ -26,10 +27,10 @@ class HiddenMarkovModel():
         # Load amino acid symbols
         with open(path, "r") as f:
             encoding = json.load(f)
-            observations = tuple(encoding['symbol']['one-character'].keys())
+            symbols = tuple(encoding['symbol']['one-character'].keys())
 
-        assert len(observations) == 20
-        return observations
+        assert len(symbols) == 20
+        return symbols
 
     def initialize_transition(self, states) -> pd.DataFrame:
         """Create the transition matrix for the HMM model
@@ -58,7 +59,7 @@ class HiddenMarkovModel():
         Returns:
             ArrayLike: Matrix of alpha_i values of size (observations x states)
         """
-        starting_distribution = starting
+        self.starting = starting
         transition_matrix = self.transition
         emission_matrix = self.emission
         
@@ -66,7 +67,7 @@ class HiddenMarkovModel():
         forward_prob = [0 for _ in range(len(observations))]
         
         # Probability of first observation is the starting distribution * emission probability
-        forward_prob[0] = starting_distribution * emission_matrix.loc[:, observations[0]]
+        forward_prob[0] = starting * emission_matrix.loc[:, observations[0]]
 
         # For observations 1, 2, ..., n the probability of the current observation
         # is the probability of transition from the previous state, to the
@@ -99,35 +100,55 @@ class HiddenMarkovModel():
         return np.vstack(backward_prob)
 
     def baum_welch_update(self, forward_prob, backward_prob, observations):
-        # Getting total probability of the observation sequence for each state
-        total_prob = np.sum(forward_prob[-1])
-        delta = []
+        forward = forward_prob
+        backward = backward_prob
+        
+        gamma = (forward * backward) / np.sum(forward * backward, axis=1)[:, np.newaxis]
 
-        for idx, obs in enumerate(observations):
-            # We can only calculate until the (n-1)st observation
-            if idx + 1 == len(observations):
-                break
+        # Update transition probabilities
+        xis = []
+        for idx, obs in enumerate(observations[1:]):
+            alpha_i = forward[idx - 1].reshape(-1, 1)
+            beta_j = backward[idx].reshape(-1, 1)
+            A = hmm.transition.values
+            B = hmm.emission.loc[:, obs].values
             
-            # Output of forward algorithm
-            alpha_curr = forward_prob[idx]
+            xi_numerator = alpha_i * A * B * beta_j
+            xi_denominator = np.sum(xi_numerator, axis=None)
+            xi = xi_numerator / xi_denominator
+            xis.append(xi)
             
-            # Output of backward algorithm
-            beta_next = backward_prob[idx + 1]
-            
-            # Calculate all combinations of state transitions to current observation
-            gamma_i = (alpha_curr * self.transition.T).T
-            gamma_i *= self.emission.loc[:, obs] * beta_next
-            gamma_i /= total_prob
-            
-            # Total probability of transitioning from state i to state j
-            delta_i = np.sum(gamma_i, axis=1)
-            delta.append(delta_i)
+        a_star_numerator = np.sum(np.dstack(xis), axis=2)
+        a_star_denominator = np.sum(gamma[:-1], axis=0)
+        a_star = a_star_numerator / a_star_denominator
+        a_star_norm = a_star / np.sum(a_star, axis=1)[:, np.newaxis]
+        self.transition = pd.DataFrame(a_star_norm, index=self.states, columns=self.states)
         
-        # Final state probability is determined exclusively by the forward algorithm output
-        delta.append(forward_prob[-1] / total_prob)
+        # Update emission probabilities
+        b_stars = []
+        for obs in set(observations):
+            mask = [True if observations[i] == obs else False for i in range(len(observations))]
+            numerator = np.sum(gamma[mask], axis=0)
+            denominator = np.sum(gamma, axis=0)
+            b_star = numerator / denominator
+            b_stars.append(b_star)
+            
+        b_star = np.vstack(b_stars)
+        b_star_norm = b_star / np.sum(b_star, axis=1)[:, np.newaxis]
+        self.emission = pd.DataFrame(b_star_norm, index=self.states, columns=self.obs_symbols)
         
-        # Turn list of 1D arrays into a single array of size (observations x states)
-        return np.vstack(delta)
+        # Update starting distribution
+        self.starting = gamma[0]
+        
+    def baum_welch(self, observations_list, iterations=1, starting = None):
+        assert isinstance(observations_list, Iterable)
+        self.starting = starting if starting is not None else np.ones(len(self.states)) / len(self.states)
+        
+        for observations in observations_list:
+            for _ in range(iterations):
+                forward = self.baum_welch_forward(observations, self.starting)
+                backward = self.baum_welch_backward(observations)
+                self.baum_welch_update(forward, backward, observations)
 
 if __name__ == "__main__":
     obs_symbols = ['a', 'b']
@@ -159,9 +180,4 @@ if __name__ == "__main__":
     )
     
     hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
-    
-    forward = hmm.baum_welch_forward('abba', pi)
-    backward = hmm.baum_welch_backward('abba')
-    delta = hmm.baum_welch_update(forward, backward, 'abba')
-
-    print(delta)
+    hmm.baum_welch(['abba'], iterations=10, starting=pi)
