@@ -66,17 +66,20 @@ def alignment_visualization(
 
     spacing_scale = axes.get_ylim()[1]/4
     spacing = spacing_scale*2
-    seq_display = np.array(range(0,N))
+    seq_display = np.linspace(start = 0, stop = N - 1, num = N, dtype=np.int8)
 
+    # For each sequence generated, plot the characters in the sequence
     for j in seq_display:
+        # Label and initial positioning of the sequence
         posit = -float(np.where(seq_display == j)[0].item()) * spacing_scale - spacing
-        axes.text(-5, posit, "Seq "+ (str(j+1)))
+        axes.text(x = -5, y = posit, s = f"Seq {str(j+1)}")
         
+        # Each character
         for i in range(0, L):
             axes.text(
-                float(i),
-                posit,
-                msa[j].seq[i],
+                x = float(i),
+                y = posit,
+                s = msa[j].seq[i],
                 bbox=dict(facecolor=palette[aa.find(msa[j].seq[i])], 
                 alpha=0.5),
                 fontdict=font
