@@ -9,7 +9,9 @@ data/tcell_receptor_table_export_1667353882.csv
 scratch.ipynb
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
+
 models/hmm/scratch.txt
+figures
 
 # IPython
 profile_default/
