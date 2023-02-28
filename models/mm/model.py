@@ -29,7 +29,7 @@ class MarkovModel():
         try:
             if filename.endswith("csv"):
                 df = pd.read_csv(filename)
-            if filename.endswith("tsv"):
+            elif filename.endswith("tsv"):
                 df = pd.read_csv(filename, sep='\t')
             else:
                 print("Please use one of the following file extensions:")
@@ -39,14 +39,14 @@ class MarkovModel():
             print("Re-run the program with the correct filepath")
             sys.exit(0)
 
-        return df['v_domain'].items()
+        return df[df.columns[0]].tolist()
 
     # Find p_ij and p_ji for each amino acid i --> amino acid j transition
     def find_pairwise_frequencies(self, strings: list[str]):
         symbols = set()
         pairs = defaultdict(lambda: 0)
 
-        for _, s in strings:
+        for s in strings:
             for i in range(1, len(s)):
                 # sliding window of size 2
                 pair = (s[i-1], s[i])
@@ -59,8 +59,23 @@ class MarkovModel():
 
         return normalized, symbols
 
-    def generate_sequence(self, length):
-        return None
+    def generate_sequence(self, length, start=None):
+        if start is None:
+            start = np.random.choice(self.transition_matrix.columns)
+            sequence = [start]
+        else:
+            sequence = [s for s in start]
+            
+        for _ in range(length - 1):
+            transition_probs = self.transition_matrix.loc[sequence[-1]]
+            normalized_probs = transition_probs / transition_probs.sum()
+            next_aa = np.random.choice(
+                self.transition_matrix.columns, 
+                p = normalized_probs
+            )
+            sequence.append(next_aa)
+            
+        return ''.join(sequence)
 
     def save_transition_matrix(self, extension='parquet'):
         if extension == 'parquet':
