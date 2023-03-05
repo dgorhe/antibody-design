@@ -1,20 +1,25 @@
 from pdb import set_trace
+import os
 import json
 import numpy as np
 import pandas as pd
-from typing import Iterable, Union
+from typing import Iterable, Union, List
 from numpy.typing import ArrayLike
+from tqdm import tqdm
+from utils import DIRS
 
 class HiddenMarkovModel():
-    def __init__(self, obs_symbols=None, states=None, transition=None, emission=None) -> None:
-        self.obs_symbols = obs_symbols
+    def __init__(self, obs_symbols=None, states=None, transition=None, emission=None, ground_truth="tcr") -> None:
+        self.obs_symbols = obs_symbols if obs_symbols is not None else ('0', '1', '2', '3')
+        self.states = states if states is not None else self.get_state_symbols(os.path.join(DIRS["DATA"], "encoding.json"))
+        self.ground_truth = ground_truth if ground_truth != "tcr" else self.get_ground_truth()
 
         self.transition = transition if transition is not None else self.initialize_transition(self.states)
-        self.emission = emission if emission is not None else self.initialize_emission(self.observations, self.states)
-        self.states = states if states is not None else ('NonCDR', 'CDR1', 'CDR2', 'CDR3')
+        self.emission = emission if emission is not None else self.initialize_emission(self.obs_symbols, self.states)
+        
         self.starting = None
 
-    def get_observation_symbols(self, path):
+    def get_state_symbols(self, path):
         """
         Load the amino acid symbols needed to parse antibody sequence
 
@@ -29,7 +34,7 @@ class HiddenMarkovModel():
             encoding = json.load(f)
             symbols = tuple(encoding['symbol']['one-character'].keys())
 
-        assert len(symbols) == 20
+        assert len(symbols) == 21
         return symbols
 
     def initialize_transition(self, states) -> pd.DataFrame:
@@ -41,8 +46,22 @@ class HiddenMarkovModel():
         Returns:
             pd.DataFrame: Transition matrix where row and column labels are states
         """
-        init_array = np.zeros(len(states), len(states))
+        init_array = np.random.randn(len(states), len(states))
         df = pd.DataFrame(init_array, index=states, columns=states)
+        return df
+    
+    def initialize_emission(self, observations, states) -> pd.DataFrame:
+        """Create the emission matrix for the HMM model
+
+        Args:
+            observations: Sequence of possible observations
+            states: Sequence of possible states
+
+        Returns:
+            pd.DataFrame: Emission matrix where row and column labels are states
+        """
+        init_array = np.random.randn(len(states), len(observations))
+        df = pd.DataFrame(init_array, index=states, columns=observations)
         return df
 
     def baum_welch_forward(
@@ -115,6 +134,7 @@ class HiddenMarkovModel():
             
             xi_numerator = alpha_i * A * B * beta_j
             xi_denominator = np.sum(xi_numerator, axis=None)
+            
             xi = xi_numerator / xi_denominator
             xis.append(xi)
             
@@ -132,15 +152,19 @@ class HiddenMarkovModel():
             denominator = np.sum(gamma, axis=0)
             b_star = numerator / denominator
             b_stars.append(b_star)
-            
+        
         b_star = np.vstack(b_stars)
         b_star_norm = b_star / np.sum(b_star, axis=1)[:, np.newaxis]
-        self.emission = pd.DataFrame(b_star_norm, index=self.states, columns=self.obs_symbols)
+        
+        # TODO: Understand why b_star_norm needs to be transposed
+        self.emission = pd.DataFrame(b_star_norm.T, index=self.states, columns=self.obs_symbols)
         
         # Update starting distribution
         self.starting = gamma[0]
         
-    def baum_welch(self, observations_list, iterations=1, starting = None):
+    def baum_welch(self, observations_list = None, iterations=1, starting = None):
+        observations_list = observations_list if observations_list is not None else self.ground_truth
+        
         assert isinstance(observations_list, Iterable)
         self.starting = starting if starting is not None else np.ones(len(self.states)) / len(self.states)
         
@@ -150,34 +174,38 @@ class HiddenMarkovModel():
                 backward = self.baum_welch_backward(observations)
                 self.baum_welch_update(forward, backward, observations)
 
+    def get_ground_truth(self) -> List[str]:
+        tcr_path = os.path.join(DIRS["DATA"], "tcell_receptor_table_export_1667353882.csv")
+        cols = [
+            "Chain 1 Full Sequence", 
+            "Chain 1 CDR1 Curated", 
+            "Chain 1 CDR2 Curated", 
+            "Chain 1 CDR3 Curated"
+        ] 
+        df_hmm = pd.read_csv(tcr_path, usecols=cols, low_memory=False).dropna()
+        
+        emitted = []
+        for idx, row in tqdm(df_hmm.iterrows(), total=df_hmm.shape[0]):
+            full, cdr1, cdr2, cdr3 = row
+            cdr1_indices = list(range(full.find(cdr1), full.find(cdr1) + len(cdr1)))
+            cdr2_indices = list(range(full.find(cdr2), full.find(cdr2) + len(cdr2)))
+            cdr3_indices = list(range(full.find(cdr3), full.find(cdr3) + len(cdr3)))
+            
+            emitted_symbols = ""
+            for idx, _ in enumerate(full):
+                if idx in cdr1_indices:
+                    emitted_symbols += "1"
+                elif idx in cdr2_indices:
+                    emitted_symbols += "2"
+                elif idx in cdr3_indices:
+                    emitted_symbols += "3"
+                else:
+                    emitted_symbols += "0"
+
+            emitted.append(emitted_symbols)
+        
+        return emitted
+
 if __name__ == "__main__":
-    obs_symbols = ['a', 'b']
-    state_symbols = ['s', 't']
-
-    pi = np.array([0.85, 0.15])
-
-    # Defined in section "2 Our first HMM h_1"
-    transition_matrix = np.array([
-        [0.3, 0.7],
-        [0.1, 0.9]
-    ])
-
-    emission_matrix = np.array([
-        [0.4, 0.6],
-        [0.5, 0.5]
-    ])
-
-    transition_df = pd.DataFrame(
-        transition_matrix, 
-        columns=state_symbols, 
-        index=state_symbols
-    )
-
-    emission_df = pd.DataFrame(
-        emission_matrix, 
-        columns=obs_symbols, 
-        index=state_symbols
-    )
-    
-    hmm = HiddenMarkovModel(transition=transition_df, emission=emission_df, states=('s', 't'), obs_symbols=('a', 'b'))
-    hmm.baum_welch(['abba'], iterations=10, starting=pi)
+    hmm = HiddenMarkovModel()
+    hmm.baum_welch(['0000011100002220000333'], iterations=10, starting=None)
