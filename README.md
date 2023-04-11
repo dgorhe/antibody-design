@@ -17,12 +17,14 @@ This is the simplest models because it simply ignores the long-range dependencie
 ## Hidden Markov Model (`models/hmm`) [Not Implemented]
 There are specific regions within the variable domain called complementary determining regions (CDRs) which are the most variable parts of the variable regions. We know where these sequences are so the hidden Markov model incorporates these as priors.
 
-## Deep AutoEncoders (`models/dae`) [Not Implemented]
+## Deep AutoEncoders (`models/dae`) [Implemented]
 Given a sequence, can we simply train a deep neural network to reconstruct that sequence? This is the naive, deep learning way to perform sequence reconstruction.
 
 <p align="center">
   <img src="diagrams/dae.svg" />
 </p>
+
+This method performs well overall acheiving an MSE loss of ~2 in 100 epochs on the training data. The extent to which this translates into real world accuracy is yet to be tested. I will update this section with better visualizations in the near future.
 
 ## Variational AutoEncoders (`models/vae`) [Implemented]
 Although it is an autoencoder at its core, this implementation uses the reparametrization trick outlined in [this paper from 2014](https://arxiv.org/abs/1312.6114). They showed that it is sufficient to simply learn a mu and sigma associated with a latent distribution of any distribution and recapitualte an input. This has worked empirically well in practice in other fields so it's worth trying out here.
