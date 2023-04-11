@@ -6,7 +6,7 @@ dependencies:
   - pandas
   - numpy
   - pytorch
-  - pytorch-lightning
+  - lightning
   - matplotlib
   - SciencePlots
   - seaborn
